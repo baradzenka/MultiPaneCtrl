@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{a5f4845f-fb9f-4389-a56b-f08bba34cb32}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{59b78807-039c-40d3-83b3-df75d8affbfa}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Source Files\MultiPaneCtrl">
+      <UniqueIdentifier>{eeaffac3-033d-4edd-bfbb-a670ab8806f6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DemoDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Project.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiPaneCtrl\DockingMarkers.cpp">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiPaneCtrl\MultiPaneCtrl.cpp">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiPaneCtrl\TabCtrl.cpp">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DemoDlg.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrm.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiPaneCtrl\DockingMarkers.h">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiPaneCtrl\MultiPaneCtrl.h">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="res\Resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiPaneCtrl\TabCtrl.h">
+      <Filter>Source Files\MultiPaneCtrl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\DragOutDisable.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DragOutEnable.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Project.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SplitterHorz.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SplitterVert.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Tab.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\Project.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Sys.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Tabs.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\TabsDisabled.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Toolbar.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\Project.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

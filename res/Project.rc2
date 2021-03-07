@@ -1,0 +1,67 @@
+//
+// PROJECT.RC2 - resources Microsoft Visual C++ does not edit directly
+//
+
+#ifdef APSTUDIO_INVOKED
+	#error this file is not editable by Microsoft Visual C++
+#endif //APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Cursor
+//
+
+IDC_CURSOR_TAB                CURSOR            "Tab.cur"
+IDC_CURSOR_SPLITTER_HORZ      CURSOR            "SplitterHorz.cur"
+IDC_CURSOR_SPLITTER_VERT      CURSOR            "SplitterVert.cur"
+IDC_CURSOR_DRAGOUT_ENABLE     CURSOR            "DragOutEnable.cur"
+IDC_CURSOR_DRAGOUT_DISABLE    CURSOR            "DragOutDisable.cur"
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Image
+//
+
+IDB_IMAGES_SYSTEM             PNG              "System.png"
+IDB_IMAGES_TAB_NORMAL         PNG              "TabNormal.png"
+IDB_IMAGES_TAB_DISABLE        PNG              "TabDisable.png"
+// 
+IDB_MARKER_A_BOTTOM           PNG              "Markers A/Bottom.png"
+IDB_MARKER_A_LEFT             PNG              "Markers A/Left.png"
+IDB_MARKER_A_RIGHT            PNG              "Markers A/Right.png"
+IDB_MARKER_A_TOP              PNG              "Markers A/Top.png"
+IDB_MARKER_A_CENTER           PNG              "Markers A/Center.png"
+// 
+IDB_MARKER_B_BOTTOM           PNG              "Markers B/Bottom.png"
+IDB_MARKER_B_LEFT             PNG              "Markers B/Left.png"
+IDB_MARKER_B_RIGHT            PNG              "Markers B/Right.png"
+IDB_MARKER_B_TOP              PNG              "Markers B/Top.png"
+IDB_MARKER_B_CENTER           PNG              "Markers B/Center.png"
+IDB_MARKER_B_BACK             PNG              "Markers B/Back.png"
+// 
+IDB_MARKER_C_BOTTOM           PNG              "Markers C/Bottom.png"
+IDB_MARKER_C_LEFT             PNG              "Markers C/Left.png"
+IDB_MARKER_C_RIGHT            PNG              "Markers C/Right.png"
+IDB_MARKER_C_TOP              PNG              "Markers C/Top.png"
+IDB_MARKER_C_CENTER           PNG              "Markers C/Center.png"
+IDB_MARKER_C_BACK             PNG              "Markers C/Back.png"
+// 
+IDB_MARKER_D_BOTTOM           PNG              "Markers D/Bottom.png"
+IDB_MARKER_D_LEFT             PNG              "Markers D/Left.png"
+IDB_MARKER_D_RIGHT            PNG              "Markers D/Right.png"
+IDB_MARKER_D_TOP              PNG              "Markers D/Top.png"
+IDB_MARKER_D_CENTER           PNG              "Markers D/Center.png"
+IDB_MARKER_D_BACK             PNG              "Markers D/Back.png"
+// 
+IDB_MARKER_E_BOTTOM           PNG              "Markers E/Bottom.png"
+IDB_MARKER_E_LEFT             PNG              "Markers E/Left.png"
+IDB_MARKER_E_RIGHT            PNG              "Markers E/Right.png"
+IDB_MARKER_E_TOP              PNG              "Markers E/Top.png"
+IDB_MARKER_E_CENTER           PNG              "Markers E/Center.png"
+IDB_MARKER_E_BACK             PNG              "Markers E/Back.png"
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+
