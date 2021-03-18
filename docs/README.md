@@ -181,3 +181,5 @@ The control requires a call to `Update` after you add or delete tabs, as well as
 The loading of the control's state depends on the contents of the `MultiPaneCtrl::Tabs` object. It should store information about the tabs that can be added to the control when loading its state from the registry or `CArchive`. You can fill `MultiPaneCtrl::Tabs` with information about all the tabs that the control currently has (`MultiPaneCtrl::GetAllTabs`) or add tabs manually (`MultiPaneCtrl::Tabs::Add`).
 
 Good luck! :-)
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate?business=HTC7VHPDL6U54&item_name=Thank+you+for+your+donation.+This+will+help+me+develop+great+things+further.&currency_code=USD)
