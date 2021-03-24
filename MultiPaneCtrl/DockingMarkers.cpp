@@ -149,6 +149,8 @@ public:
 			// 
 		bool m_bDisable;
 		bool m_bHighlight;
+			// 
+		BOOL(__stdcall *m_pUpdateLayeredWindow)(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD);
 	};
 		// 
 	struct Animation : Timer::INotify
@@ -211,6 +213,8 @@ public:
 		Draw *m_pDrawManager;
 		bool m_bCenter, m_bTabsOnTop;
 		int m_iTabHeight;
+			//
+		BOOL( __stdcall *m_pSetLayeredWindowAttributes)(HWND,COLORREF,BYTE,DWORD);
 			// 
 		DECLARE_MESSAGE_MAP()
 		LRESULT OnPaint(WPARAM wp, LPARAM lp);
@@ -260,6 +264,8 @@ DockingMarkers::Layout::Layout(int widthTotal, int heightTotal,
 DockingMarkers::Private::MarkerWindow::MarkerWindow(DockingMarkers *p, Position position) : 
 	m_pDockingMarkers(p), m_Position(position)
 {
+	HMODULE hUser32 = LoadLibrary(_T("User32.dll"));
+	m_pUpdateLayeredWindow = reinterpret_cast<BOOL(__stdcall *)(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD)>( ::GetProcAddress(hUser32,"UpdateLayeredWindow") );
 }
 // 
 DockingMarkers::Private::MarkerWindow::~MarkerWindow()
@@ -271,8 +277,11 @@ bool DockingMarkers::Private::MarkerWindow::Create(HMODULE moduleRes/*or null*/,
 {	if(resID==0)   // this marker doesn't use.
 		return true;
 		// 
+	if(!m_pUpdateLayeredWindow)
+		return false;
+		// 
 	const CString className = AfxRegisterWndClass(CS_DBLCLKS,::LoadCursor(nullptr,IDC_ARROW),nullptr,nullptr);
-	if( !CWnd::CreateEx(WS_EX_TOOLWINDOW | WS_EX_LAYERED,className,_T(""),WS_POPUP,CRect(0,0,0,0),nullptr,0) )
+	if( !CWnd::CreateEx(WS_EX_TOOLWINDOW | 0x00080000/*WS_EX_LAYERED*/,className,_T(""),WS_POPUP,CRect(0,0,0,0),nullptr,0) )
 		return false;
 		// 
 	Gdiplus::Bitmap *bmp;
@@ -342,7 +351,7 @@ void DockingMarkers::Private::MarkerWindow::SetTransparence(int transparence/*pe
 			CPoint ptSrc(image*szDst.cx,0);
 				// 
 			CBitmap *bmpOld = static_cast<CBitmap*>( dcComp.SelectObject(&m_Image) );
-			::UpdateLayeredWindow(m_hWnd, nullptr, nullptr,&szDst, dcComp.m_hDC, &ptSrc, m_clrMask, &func, ULW_ALPHA | (m_clrMask!=CLR_NONE ? ULW_COLORKEY : 0));
+			m_pUpdateLayeredWindow(m_hWnd, nullptr, nullptr,&szDst, dcComp.m_hDC, &ptSrc, m_clrMask, &func, 0x00000002/*ULW_ALPHA*/ | (m_clrMask!=CLR_NONE ? 0x00000001/*ULW_COLORKEY*/ : 0));
 			dcComp.SelectObject(bmpOld);
 		}
 	}
@@ -476,6 +485,9 @@ DockingMarkers::Private::InsertionWindow::InsertionWindow(DockingMarkers *p) :
 	m_pDockingMarkers(p)
 {
 	m_pDrawManager = nullptr;
+		// 
+	HMODULE hUser32 = LoadLibrary(_T("User32.dll"));
+	m_pSetLayeredWindowAttributes = reinterpret_cast<BOOL( __stdcall *)(HWND,COLORREF,BYTE,DWORD)>( ::GetProcAddress(hUser32,"SetLayeredWindowAttributes") );
 }
 // 
 DockingMarkers::Private::InsertionWindow::~InsertionWindow()
@@ -484,13 +496,16 @@ DockingMarkers::Private::InsertionWindow::~InsertionWindow()
 /////////////////////////////////////////////////////////////////////////////
 // 
 bool DockingMarkers::Private::InsertionWindow::Create(int transparence)
-{	const CString className = AfxRegisterWndClass(CS_DBLCLKS,::LoadCursor(nullptr,IDC_ARROW),nullptr,nullptr);
-	if( !CWnd::CreateEx(WS_EX_TOOLWINDOW | WS_EX_LAYERED,className,_T(""),WS_POPUP,CRect(0,0,0,0),nullptr,0) )
+{	if(!m_pSetLayeredWindowAttributes)
+		return false;
+		// 
+	const CString className = AfxRegisterWndClass(CS_DBLCLKS,::LoadCursor(nullptr,IDC_ARROW),nullptr,nullptr);
+	if( !CWnd::CreateEx(WS_EX_TOOLWINDOW | 0x00080000/*WS_EX_LAYERED*/,className,_T(""),WS_POPUP,CRect(0,0,0,0),nullptr,0) )
 		return false;
 		// 
 	const COLORREF clrMask = (m_pDrawManager ? m_pDrawManager->GetInsertionWindowTranspColor(m_pDockingMarkers) : RGB(255,0,255));
 	const BYTE transp = static_cast<BYTE>(((100 - transparence) * 255) / 100);
-	::SetLayeredWindowAttributes(m_hWnd,clrMask,transp,LWA_COLORKEY | LWA_ALPHA);
+	m_pSetLayeredWindowAttributes(m_hWnd,clrMask,transp,0x00000001/*LWA_COLORKEY*/ | 0x00000002/*LWA_ALPHA*/);
 		// 
 	return true;
 }
