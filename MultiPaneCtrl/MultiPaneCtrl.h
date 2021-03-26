@@ -448,6 +448,7 @@ template<typename TABSTYLE, COLORREF SPLITTERCOLOR, COLORREF BORDERCOLOR> struct
 	CBrush *GetDragBrush() override { static CBrush br(0x00919191); return &br; }};
 // 
 typedef MultiPaneCtrlStyle_VS2019_base<TabCtrlStyle_VS2019_client_light,RGB(238,238,242),RGB(204,206,219)> MultiPaneCtrlStyle_VS2019_client_light;
+typedef MultiPaneCtrlStyle_VS2019_base<TabCtrlStyle_VS2019_client_light_custom1,RGB(238,238,242),RGB(204,206,219)> MultiPaneCtrlStyle_VS2019_client_light_custom1;
 typedef MultiPaneCtrlStyle_VS2019_base<TabCtrlStyle_VS2019_client_dark,RGB(45,45,48),RGB(63,63,70)> MultiPaneCtrlStyle_VS2019_client_dark;
 typedef MultiPaneCtrlStyle_VS2019_base<TabCtrlStyle_VS2019_client_blue,RGB(93,107,153),RGB(93,107,153)> MultiPaneCtrlStyle_VS2019_client_blue;
 // 

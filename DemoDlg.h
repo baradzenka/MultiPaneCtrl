@@ -110,6 +110,7 @@ struct MultiPaneCtrlComplex : MultiPaneCtrl
 	MultiPaneCtrlStyle_VS2010_bars styleVS2010_bars;
 		// 
 	MultiPaneCtrlStyle_VS2019_client_light styleVS2019_client_light;
+	MultiPaneCtrlStyle_VS2019_client_light_custom1 styleVS2019_client_light_custom1;
 	MultiPaneCtrlStyle_VS2019_client_dark styleVS2019_client_dark;
 	MultiPaneCtrlStyle_VS2019_client_blue styleVS2019_client_blue;
 	MultiPaneCtrlStyle_VS2019_bars_light styleVS2019_bars_light;

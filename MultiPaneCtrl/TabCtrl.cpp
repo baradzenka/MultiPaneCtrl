@@ -193,6 +193,7 @@ private:   // TabCtrl::IRecalc.
 	int GetTabExtraWidth(TabCtrl const *ctrl, IRecalc *base, HTAB tab) override;
 	int GetTabMinWidth(TabCtrl const *ctrl, IRecalc *base) override;
 		// 
+	CRect GetButtonsHorzMargin(TabCtrl const *ctrl, IRecalc *base) override;
 	CRect GetButtonCloseHorzMargin(TabCtrl const *ctrl, IRecalc *base) override;
 	CRect GetButtonMenuHorzMargin(TabCtrl const *ctrl, IRecalc *base) override;
 	CRect GetButtonScrollLeftHorzMargin(TabCtrl const *ctrl, IRecalc *base) override;
@@ -231,6 +232,7 @@ public:
 	bool m_bEnableTabRemove;
 	bool m_bHideSingleTab;
 	bool m_bToolTip;
+	bool m_bMouseWheelScrolling;
 	bool m_bShowButtonClose;
 	bool m_bShowButtonMenu;
 	bool m_bShowButtonsScroll;
@@ -331,6 +333,7 @@ BEGIN_MESSAGE_MAP(TabCtrl, CWnd)
 	ON_WM_RBUTTONDOWN()
 	ON_WM_RBUTTONUP()
 	ON_WM_MBUTTONDOWN()
+	ON_WM_MOUSEWHEEL()
 	ON_WM_CAPTURECHANGED()
 	ON_MESSAGE(WM_MOUSELEAVE, OnMouseLeave)
 	ON_WM_TIMER()
@@ -375,6 +378,7 @@ TabCtrl::Private::Private(TabCtrl &owner) : o(owner)
 	m_bEnableTabRemove = false;
 	m_bHideSingleTab = false;
 	m_bToolTip = true;
+	m_bMouseWheelScrolling = true;
 	m_bShowButtonClose = true;
 	m_bShowButtonMenu = true;
 	m_bShowButtonsScroll = true;
@@ -1067,7 +1071,7 @@ void TabCtrl::Private::Recalc(bool redraw)
 			// 
 			// 
 		if(m_hCurTab && !o.IsTabExist(m_hCurTab))
-			m_hCurTab=nullptr;
+			m_hCurTab = nullptr;
 			// 
 		HTAB hOldCurTab = m_hCurTab;
 			// 
@@ -1107,13 +1111,14 @@ void TabCtrl::Private::Recalc(bool redraw)
 			// 
 		const int iSysImagePosY = (m_rcTabs.top + m_rcTabs.bottom - m_ImageSys.size.cy) / 2;
 			// 
+		const CRect rcSysButtonsMargin = o.GetButtonsHorzMargin();
+		if(bShowCloseButton || bShowMenuButton || bShowScrollButtons)
+			m_rcTabs.right -= rcSysButtonsMargin.right;
+			// 
 		if(bShowCloseButton)
-		{	const CRect rcCloseHorzMargin = o.GetButtonCloseHorzMargin();
-				// 
-			m_rcButtonClose = m_rcTabs;
-			m_rcButtonClose.right -= rcCloseHorzMargin.right;
+		{	m_rcButtonClose.right = m_rcTabs.right;
 			m_rcButtonClose.left = m_rcButtonClose.right - m_ImageSys.size.cx;
-			m_rcTabs.right = m_rcButtonClose.left - rcCloseHorzMargin.left;
+			m_rcTabs.right = m_rcButtonClose.left - o.GetButtonCloseHorzMargin().left;
 				// 
 			m_rcButtonClose.top = iSysImagePosY;
 			m_rcButtonClose.bottom = m_rcButtonClose.top + m_ImageSys.size.cy;
@@ -1124,8 +1129,9 @@ void TabCtrl::Private::Recalc(bool redraw)
 		if(bShowMenuButton)
 		{	const CRect rcMenuHorzMargin = o.GetButtonMenuHorzMargin();
 				// 
-			m_rcButtonMenu = m_rcTabs;
-			m_rcButtonMenu.right -= rcMenuHorzMargin.right;
+			m_rcButtonMenu.right = m_rcTabs.right;
+			if(bShowCloseButton)
+				m_rcButtonMenu.right -= rcMenuHorzMargin.right;
 			m_rcButtonMenu.left = m_rcButtonMenu.right - m_ImageSys.size.cx;
 			m_rcTabs.right = m_rcButtonMenu.left - rcMenuHorzMargin.left;
 				// 
@@ -1139,8 +1145,9 @@ void TabCtrl::Private::Recalc(bool redraw)
 		{	const CRect rcLeftScrollMargin = o.GetButtonScrollLeftHorzMargin();
 			const CRect rcRightScrollMargin = o.GetButtonScrollRightHorzMargin();
 				// 
-			m_rcButtonScrollRight = m_rcTabs;
-			m_rcButtonScrollRight.right -= rcRightScrollMargin.right;
+			m_rcButtonScrollRight.right = m_rcTabs.right;
+			if(bShowCloseButton || bShowMenuButton)
+				m_rcButtonScrollRight.right -= rcRightScrollMargin.right;
 			m_rcButtonScrollRight.left = m_rcButtonScrollRight.right - m_ImageSys.size.cx;
 			m_rcButtonScrollLeft.right = m_rcButtonScrollRight.left - rcRightScrollMargin.left - rcLeftScrollMargin.right;
 			m_rcButtonScrollLeft.left = m_rcButtonScrollLeft.right - m_ImageSys.size.cx;
@@ -1154,8 +1161,11 @@ void TabCtrl::Private::Recalc(bool redraw)
 			m_rcButtonScrollRight.SetRectEmpty();
 		}
 			// 
+		if(bShowCloseButton || bShowMenuButton || bShowScrollButtons)
+			m_rcTabs.right -= rcSysButtonsMargin.left;
 			// 
-		const int visibleTabsWidth = std::max(0,m_rcTabs.Width()-1);
+			// 
+		const int visibleTabsWidth = std::max(0,m_rcTabs.Width());
 		const int fullTabsWidth = GetFullTabsWidth();
 			// 
 		m_iMaxTabsOffset = std::max(0, fullTabsWidth-visibleTabsWidth);
@@ -1285,7 +1295,7 @@ void TabCtrl::Private::RecalcScale(int visibleTabsWidth, int fullTabsWidth)
 						width = std::max(iMinTabWidth, (*i)->width - static_cast<int>(static_cast<double>(iTail) * (static_cast<double>((*i)->width - iEqualWidth) / static_cast<double>(iTotalCorrectWidth)) + 0.5) );
 				}
 				else
-					width = std::max<int>(iMinTabWidth, (m_rcTabs.right-1) - pos - (rcTabHorzMargin.left + rcTabHorzMargin.right));
+					width = std::max<int>(iMinTabWidth, m_rcTabs.right - pos - (rcTabHorzMargin.left + rcTabHorzMargin.right));
 					// 
 				(*i)->rect = m_rcTabs;
 				(*i)->rect.left = pos;
@@ -1514,6 +1524,15 @@ void TabCtrl::EnableToolTip(bool enable)
 // 
 bool TabCtrl::IsToolTipEnable() const
 {	return p.m_bToolTip;
+}
+/////////////////////////////////////////////////////////////////////////////
+//
+void TabCtrl::EnableMouseWheelScrolling(bool enable)
+{	p.m_bMouseWheelScrolling = enable;
+}
+// 
+bool TabCtrl::IsMouseWheelScrollingEnable() const
+{	return p.m_bMouseWheelScrolling;
 }
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -1845,21 +1864,21 @@ int TabCtrl::Private::GetTabMinWidth(TabCtrl const *ctrl, IRecalc * /*base*/)
 	ctrl->GetImageSize(&szImage/*out*/,&szImageDisabled/*out*/);
 	return rcTabPadding.left + std::max(szImage.cx,szImageDisabled.cx) + rcTabPadding.right;
 }
-// 
+//
+CRect TabCtrl::Private::GetButtonsHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(9,0,2,0);
+}
 CRect TabCtrl::Private::GetButtonCloseHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
-{	return CRect(2,0,2,0);
-}
-// 
-CRect TabCtrl::Private::GetButtonMenuHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
-{	return CRect(8,0,0,0);
-}
-// 
-CRect TabCtrl::Private::GetButtonScrollLeftHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
-{	return CRect(8,0,0,0);
-}
-// 
-CRect TabCtrl::Private::GetButtonScrollRightHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
 {	return CRect(0,0,0,0);
+}
+CRect TabCtrl::Private::GetButtonMenuHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(0,0,2,0);
+}
+CRect TabCtrl::Private::GetButtonScrollLeftHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(0,0,0,0);
+}
+CRect TabCtrl::Private::GetButtonScrollRightHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(0,0,8,0);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -1910,6 +1929,7 @@ CRect TabCtrl::GetTabPadding() const { return p.m_pRecalcManager->GetTabPadding(
 int TabCtrl::GetTabImageTextSpace() const { return p.m_pRecalcManager->GetTabImageTextSpace(this,&p); }
 int TabCtrl::GetTabExtraWidth(HTAB tab) const { return p.m_pRecalcManager->GetTabExtraWidth(this,&p,tab); }
 int TabCtrl::GetTabMinWidth() const { return p.m_pRecalcManager->GetTabMinWidth(this,&p); }
+CRect TabCtrl::GetButtonsHorzMargin() const { return p.m_pRecalcManager->GetButtonsHorzMargin(this,&p); }
 CRect TabCtrl::GetButtonCloseHorzMargin() const { return p.m_pRecalcManager->GetButtonCloseHorzMargin(this,&p); }
 CRect TabCtrl::GetButtonMenuHorzMargin() const { return p.m_pRecalcManager->GetButtonMenuHorzMargin(this,&p); }
 CRect TabCtrl::GetButtonScrollLeftHorzMargin() const { return p.m_pRecalcManager->GetButtonScrollLeftHorzMargin(this,&p); }
@@ -2154,6 +2174,22 @@ void TabCtrl::OnMButtonDown(UINT nFlags, CPoint point)
 {	p.SetFocusInChildWnd();
 		// 
 	CWnd::OnMButtonDown(nFlags, point);
+}
+/////////////////////////////////////////////////////////////////////////////
+//
+BOOL TabCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
+{	if( IsMouseWheelScrollingEnable() )
+		if(GetBehavior()==BehaviorScroll)
+		{	CPoint pt(point);
+			ScreenToClient(&pt);
+			if( p.m_rcTabs.PtInRect(pt) )
+			{	(zDelta>0 ? p.StepLeft() : p.StepRight());
+				Update();
+				PostMessage(WM_MOUSEMOVE,nFlags,MAKELPARAM(pt.x,pt.y));   // update tab under cursor.
+			}
+		}
+		// 
+	return CWnd::OnMouseWheel(nFlags, zDelta, point);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -2669,10 +2705,14 @@ void TabCtrlStyle_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl::HTAB 
 {	const COLORREF clrBorder = GetTabBorderColor(ctrl);
 	const COLORREF clrBack = GetTabSelectedBackColor(ctrl);
 		// 
-	if(ctrl->GetSelectedTab()!=tab)
-	{	if(ctrl->GetTabUnderCursor()==tab && ctrl->GetPushedTab()==nullptr && !ctrl->IsTabDisabled(tab))   // highlighted tab.
+	if(tab!=ctrl->GetSelectedTab())
+	{	const bool tastTab = tab==ctrl->GetTabHandleByIndex(ctrl->GetNumberTabs()-1);
+			// 
+		if(ctrl->GetTabUnderCursor()==tab && ctrl->GetPushedTab()==nullptr && !ctrl->IsTabDisabled(tab))   // highlighted tab.
 		{	CRect rc(rect);
 				// 
+			if(tastTab)
+				--rc.right;
 			if(ctrl->GetLayout()==TabCtrl::LayoutTop)
 			{	rc.DeflateRect(2,1,1,1);
 				DrawHalfRoundFrame(dc,&rc,SideTop,1,clrBorder,clrBack);
@@ -2690,9 +2730,11 @@ void TabCtrlStyle_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl::HTAB 
 		int bottomMargin = rcTabPadding.bottom + 1;
 		(ctrl->GetLayout()==TabCtrl::LayoutTop ? bottomMargin+=1/*separator*/ : topMargin+=1/*separator*/);
 			// 
-		if(tab==ctrl->GetTabHandleByIndex(0))   // this is first tab.
+		if(tab==ctrl->GetTabHandleByIndex(0))   // this is the first tab.
 			DrawLine(dc,rect->left,rect->top+topMargin,rect->left,rect->bottom-bottomMargin,clrBorder);
-		DrawLine(dc,rect->right,rect->top+topMargin,rect->right,rect->bottom-bottomMargin,clrBorder);
+		(tastTab ?
+			DrawLine(dc,rect->right-1,rect->top+topMargin,rect->right-1,rect->bottom-bottomMargin,clrBorder) :
+			DrawLine(dc,rect->right,rect->top+topMargin,rect->right,rect->bottom-bottomMargin,clrBorder));
 	}
 	else
 		DrawHalfRoundFrame(dc,rect,
@@ -3108,7 +3150,7 @@ COLORREF TabCtrlStyle_VS2003_base::GetButtonMenuColor(TabCtrl const * /*ctrl*/, 
 /////////////////////////////////////////////////////////////////////////////
 // 
 CRect TabCtrlStyle_VS2003_client::GetControlAreaPadding(TabCtrl const *ctrl, IRecalc * /*base*/)
-{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(5,2,3,0) : CRect(5,0,3,2));
+{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(5,2,5,0) : CRect(5,0,5,2));
 }
 // 
 CRect TabCtrlStyle_VS2003_client::GetWindowsAreaPadding(TabCtrl const *ctrl, IRecalc * /*base*/)
@@ -3121,6 +3163,10 @@ CRect TabCtrlStyle_VS2003_client::GetWindowsAreaPadding(TabCtrl const *ctrl, IRe
 CRect TabCtrlStyle_VS2003_client::GetTabPadding(TabCtrl const *ctrl, IRecalc * /*base*/)
 {	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? 
 		CRect(6,1/*border*/+2,6,2+1/*line*/) : CRect(6,1/*line*/+2,6,2+1/*border*/));
+}
+//
+CRect TabCtrlStyle_VS2003_client::GetButtonsHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(9,0,0,0);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -3135,23 +3181,20 @@ void TabCtrlStyle_VS2003_client::DrawControlAreaBack(TabCtrl const *ctrl, CDC *d
 }
 // 
 void TabCtrlStyle_VS2003_client::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl::HTAB tab, CRect const *rect, CRgn * /*rgn*/)
-{	const bool top = (ctrl->GetLayout()==TabCtrl::LayoutTop);
-	const bool select = (ctrl->GetSelectedTab()==tab);
+{	CRect rc(rect);
 		// 
-	CRect rc(rect);
-		// 
-	if(select)
+	if(tab==ctrl->GetSelectedTab())
 	{	CPen penBorder(PS_SOLID,1, GetTabBorderColor(ctrl) );
 		CPen *pOldPen = dc->SelectObject(&penBorder);
 			// 
-		if(top)
+		if(ctrl->GetLayout()==TabCtrl::LayoutTop)
 		{	FillSolidRect(dc,&rc,GetWndsAreaBackColor(ctrl));   // fill background.
 				// draw left-top border.
 			dc->MoveTo(rc.left,rc.bottom-1);
 			dc->LineTo(rc.left,rc.top);
 			dc->LineTo(rc.right,rc.top);
 				// draw right border.
-			DrawLine(dc,rc.right-1,rc.top+1,rc.right-1,rc.bottom,::GetSysColor(COLOR_BTNTEXT));
+			DrawLine(dc,rc.right-1,rc.top+1,rc.right-1,rc.bottom, ::GetSysColor(COLOR_BTNTEXT) );
 		}
 		else
 		{	FillSolidRect(dc,&rc,GetWndsAreaBackColor(ctrl));   // fill background.
@@ -3160,13 +3203,15 @@ void TabCtrlStyle_VS2003_client::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCt
 			dc->LineTo(rc.left,rc.bottom-1);
 			dc->LineTo(rc.right,rc.bottom-1);
 				// draw right border.
-			DrawLine(dc,rc.right-1,rc.top,rc.right-1,rc.bottom-1,::GetSysColor(COLOR_BTNTEXT));
+			DrawLine(dc,rc.right-1,rc.top,rc.right-1,rc.bottom-1, ::GetSysColor(COLOR_BTNTEXT) );
 		}
 		dc->SelectObject(pOldPen);
 	}
 	else
-	{	CRect rcTabPadding = ctrl->GetTabPadding();
+	{	const CRect rcTabPadding = ctrl->GetTabPadding();
 		rc.DeflateRect(0,rcTabPadding.top-1,0,rcTabPadding.bottom-1);
+		if(tab==ctrl->GetTabHandleByIndex(ctrl->GetNumberTabs()-1))   // this is the last tab.
+			--rc.right;
 		DrawLine(dc,rc.right,rc.top,rc.right,rc.bottom, ::GetSysColor(COLOR_BTNSHADOW) );   // draw right separator.
 	}
 }
@@ -3230,12 +3275,16 @@ int TabCtrlStyle_VS2003_bars::GetBorderWidth(TabCtrl const * /*ctrl*/, TabCtrl::
 }
 // 
 CRect TabCtrlStyle_VS2003_bars::GetControlAreaPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
-{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(5,2,3,2) : CRect(5,2,3,2));
+{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(5,2,5,2) : CRect(5,2,5,2));
 }
 // 
 CRect TabCtrlStyle_VS2003_bars::GetTabPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
 {	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? 
 		CRect(6,1/*border*/+1,6,1+1/*line*/) : CRect(6,1/*line*/+1,6,1+1/*border*/));
+}
+//
+CRect TabCtrlStyle_VS2003_bars::GetButtonsHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(9,0,0,0);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -3271,11 +3320,10 @@ void TabCtrlStyle_VS2003_bars::DrawControlAreaBack(TabCtrl const *ctrl, CDC *dc,
 // 
 void TabCtrlStyle_VS2003_bars::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl::HTAB tab, CRect const *rect, CRgn * /*rgn*/)
 {	const bool top = (ctrl->GetLayout()==TabCtrl::LayoutTop);
-	const bool select = (ctrl->GetSelectedTab()==tab);
 		// 
 	CRect rc(rect);
 		// 
-	if(select)
+	if(tab==ctrl->GetSelectedTab())
 	{	CPen penBorder(PS_SOLID,1, GetTabBorderColor(ctrl) );
 		CPen *pOldPen = dc->SelectObject(&penBorder);
 			// 
@@ -3305,10 +3353,11 @@ void TabCtrlStyle_VS2003_bars::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl
 	}
 	else
 	{	const CRect rcTabPadding = ctrl->GetTabPadding();
-		if(top)
-			rc.DeflateRect(0,rcTabPadding.top,0,rcTabPadding.bottom+1);
-		else
-			rc.DeflateRect(0,rcTabPadding.top+1,0,rcTabPadding.bottom);
+		(top ?
+			rc.DeflateRect(0,rcTabPadding.top,0,rcTabPadding.bottom+1) :
+			rc.DeflateRect(0,rcTabPadding.top+1,0,rcTabPadding.bottom));
+		if(tab==ctrl->GetTabHandleByIndex(ctrl->GetNumberTabs()-1))   // this is the last tab.
+			--rc.right;
 		DrawLine(dc,rc.right,rc.top,rc.right,rc.bottom, ::GetSysColor(COLOR_BTNSHADOW) );   // draw right separator.
 	}
 }
@@ -3325,7 +3374,7 @@ COLORREF TabCtrlStyle_VS2003_bars::GetTabBorderColor(TabCtrl const * /*ctrl*/)
 /////////////////////////////////////////////////////////////////////////////
 // 
 CRect TabCtrlStyle_VS2003_bars_custom1::GetControlAreaPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
-{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(4,1,2,0) : CRect(4,0,2,1));
+{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(4,1,4,0) : CRect(4,0,4,1));
 }
 // 
 CRect TabCtrlStyle_VS2003_bars_custom1::GetWindowsAreaPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
@@ -3424,7 +3473,7 @@ int TabCtrlStyle_VS2008_client_base::GetBorderWidth(TabCtrl const * /*ctrl*/, Ta
 }
 // 
 CRect TabCtrlStyle_VS2008_client_base::GetControlAreaPadding(TabCtrl const * /*ctrl*/, TabCtrl::IRecalc * /*base*/)
-{	return CRect(0,0,3,0);
+{	return CRect(0,0,5,0);
 }
 CRect TabCtrlStyle_VS2008_client_base::GetWindowsAreaPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
 {	const bool bHideSingleTab = (ctrl->GetNumberTabs()==1 && ctrl->IsHideSingleTab());
@@ -3443,6 +3492,10 @@ int TabCtrlStyle_VS2008_client_base::GetTabExtraWidth(TabCtrl const *ctrl, TabCt
 }
 int TabCtrlStyle_VS2008_client_base::GetTabMinWidth(TabCtrl const *ctrl, TabCtrl::IRecalc *base)
 {	return base->GetTabMinWidth(ctrl,base) + (GetSlantWidth(ctrl)-6);
+}
+//
+CRect TabCtrlStyle_VS2008_client_base::GetButtonsHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(9,0,0,0);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -4043,15 +4096,15 @@ void TabCtrlStyle_VS2008_bars_base::DrawControlAreaBack(TabCtrl const *ctrl, CDC
 // 
 void TabCtrlStyle_VS2008_bars_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, TabCtrl::HTAB tab, CRect const *rect, CRgn * /*rgn*/)
 {	const bool top = (ctrl->GetLayout()==TabCtrl::LayoutTop);
-	const bool select = (ctrl->GetSelectedTab()==tab);
-	const int count = ctrl->GetNumberTabs();
+	TabCtrl::HTAB tabSel = ctrl->GetSelectedTab();
+	const bool lastTab = (ctrl->GetTabHandleByIndex(ctrl->GetNumberTabs()-1)==tab);
 		// 
 	const COLORREF clrBorder = GetTabBorderColor(ctrl,false);
 		// 
 	CPen penBorder(PS_SOLID,1,clrBorder);
 	CPen *pOldPen = dc->SelectObject(&penBorder);
 		// 
-	if(select)
+	if(tab==tabSel)
 	{	const bool firstTab = (ctrl->GetTabHandleByIndex(0)==tab);
 		const COLORREF clrBackSelected = GetTabSelectedBackColor(ctrl);
 			// 
@@ -4063,13 +4116,17 @@ void TabCtrlStyle_VS2008_bars_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, Ta
 		{	dc->MoveTo(rect->left,rect->bottom - (firstTab ? 1 : 2));
 			dc->LineTo(rect->left,rect->top);
 			dc->LineTo(rect->right-1,rect->top);
-			dc->LineTo(rect->right-1,rect->bottom-1);
+			(lastTab && rect->right==ctrl->GetCtrlArea().right ?
+				dc->LineTo(rect->right-1,rect->bottom) :
+				dc->LineTo(rect->right-1,rect->bottom-1));
 		}
 		else
 		{	dc->MoveTo(rect->left,rect->top + (firstTab ? 0 : 1));
 			dc->LineTo(rect->left,rect->bottom-1);
 			dc->LineTo(rect->right-1,rect->bottom-1);
-			dc->LineTo(rect->right-1,rect->top);
+			(lastTab && rect->right==ctrl->GetCtrlArea().right ?
+				dc->LineTo(rect->right-1,rect->top-1) :
+				dc->LineTo(rect->right-1,rect->top));
 		}
 	}
 	else	// tab isn't selected.
@@ -4080,7 +4137,6 @@ void TabCtrlStyle_VS2008_bars_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, Ta
 		const COLORREF clrBackLight = GetTabGradientLightColor(ctrl,hover,disabled);
 		const COLORREF clrBackDark = GetTabGradientDarkColor(ctrl,hover,disabled);
 			// 
-		TabCtrl::HTAB tabSel = ctrl->GetSelectedTab();
 		const int cmpRes = (tabSel ? ctrl->CompareTabsPosition(tab,tabSel) : -1);
 			// 
 		CRect rc(rect);
@@ -4158,11 +4214,8 @@ void TabCtrlStyle_VS2008_bars_base::DrawTabBack(TabCtrl const *ctrl, CDC *dc, Ta
 			// 
 			// draw closing line.
 		if(cmpRes<0)   // before selected tab or there isn't selected tab.
-		{	const bool lastTab = (ctrl->GetTabHandleByIndex(count-1)==tab);
-				// 
 			if(lastTab)
 				DrawLine(dc,rc.right-1,rc.top,rc.right-1,rc.bottom);
-		}
 	}
 	dc->SelectObject(pOldPen);
 }
@@ -4453,7 +4506,7 @@ int TabCtrlStyle_VS2010_client::GetBorderWidth(TabCtrl const * /*ctrl*/, TabCtrl
 }
 // 
 CRect TabCtrlStyle_VS2010_client::GetControlAreaPadding(TabCtrl const * /*ctrl*/, TabCtrl::IRecalc * /*base*/)
-{	return CRect(0,0,3,0);
+{	return CRect(0,0,0,0);
 }
 // 
 CRect TabCtrlStyle_VS2010_client::GetWindowsAreaPadding(TabCtrl const * /*ctrl*/, TabCtrl::IRecalc * /*base*/)
@@ -4463,6 +4516,10 @@ CRect TabCtrlStyle_VS2010_client::GetWindowsAreaPadding(TabCtrl const * /*ctrl*/
 CRect TabCtrlStyle_VS2010_client::GetTabPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
 {	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? 
 		CRect(5,1/*border*/+3,5,3) : CRect(5,3,5,3+1/*border*/));
+}
+//
+CRect TabCtrlStyle_VS2010_client::GetButtonsHorzMargin(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
+{	return CRect(9,0,5,0);
 }
 /////////////////////////////////////////////////////////////////////////////
 // 
@@ -4583,7 +4640,7 @@ void TabCtrlStyle_VS2010_client::DrawTabBack(TabCtrl const * /*ctrl*/, CDC *dc, 
 			dc->MoveTo(rc.left,rc.top);
 			dc->LineTo(rc.left,rc.bottom-1);
 			dc->LineTo(rc.right-1,rc.bottom-1);
-			dc->LineTo(rc.right-1,rc.top);
+			dc->LineTo(rc.right-1,rc.top-1);
 			dc->SelectObject(pOldPen);
 				// draw back.
 			rc.DeflateRect(1,0,1,1);
@@ -4616,19 +4673,25 @@ void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *d
 // 
 void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *dc, CRect const *rect, bool top, bool active)
 {	CRect rc;
-	const TabCtrl::HTAB firstTab = (ctrl->GetNumberTabs()>0 ? ctrl->GetTabHandleByIndex(0) : nullptr);
-	const bool selectFirstTab = (ctrl->GetSelectedTab()==firstTab);
+	const int numberTab = ctrl->GetNumberTabs();
+	const TabCtrl::HTAB selectedTab = ctrl->GetSelectedTab();
+	const TabCtrl::HTAB firstTab = (numberTab>0 ? ctrl->GetTabHandleByIndex(0) : nullptr);
+	const bool selectFirstTab = (selectedTab==firstTab);
+	const TabCtrl::HTAB lastTab = (numberTab>0 ? ctrl->GetTabHandleByIndex(numberTab-1) : nullptr);
 	const bool scaleMode = (ctrl->GetBehavior()==TabCtrl::BehaviorScale);
-	const COLORREF clr = (active ? RGB(255,232,166) : RGB(206,212,223));
+	const COLORREF clrBack = (active ? RGB(255,232,166) : RGB(206,212,223));
+	const bool hideSingleTab = (numberTab==1 && ctrl->IsHideSingleTab());
+	const bool anyButtonsVisible = !ctrl->GetButtonCloseRect().IsRectEmpty() || !ctrl->GetButtonMenuRect().IsRectEmpty() ||
+		!ctrl->GetButtonScrollLeftRect().IsRectEmpty();
 		// 
 		// draw top.
 	rc.SetRect(rect->left,rect->top,rect->right,rect->top+4);
-	FillSolidRect(dc,&rc,clr);
+	FillSolidRect(dc,&rc,clrBack);
 		// 
 	if(!top || scaleMode)
 	{		// left corner.
-		if(!top || !selectFirstTab || (ctrl->GetNumberTabs()==1 && ctrl->IsHideSingleTab()))
-			if(top && ctrl->GetTabUnderCursor()==firstTab)   // tab is highlight.
+		if(!top || hideSingleTab || !selectFirstTab)
+			if(top && ctrl->GetTabUnderCursor()==firstTab)   // first tab is highlight.
 			{	if(active)
 				{	dc->SetPixelV(rc.left,rc.top,RGB(175,180,180));
 					dc->SetPixelV(rc.left+1,rc.top,RGB(205,194,152));
@@ -4640,7 +4703,7 @@ void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *d
 					dc->SetPixelV(rc.left,rc.top+1,RGB(192,199,212));
 				}
 			}
-			else	// tab isn't highlight.
+			else	// first tab isn't highlight.
 				if(active)
 				{	dc->SetPixelV(rc.left,rc.top,RGB(86,95,105));
 					dc->SetPixelV(rc.left+1,rc.top,RGB(198,188,149));
@@ -4652,26 +4715,40 @@ void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *d
 					dc->SetPixelV(rc.left,rc.top+1,RGB(160,169,185));
 				}
 			// right corner.
-		if(active)
-		{	dc->SetPixelV(rc.right-1,rc.top,RGB(100,106,109));
-			dc->SetPixelV(rc.right-2,rc.top,RGB(205,192,148));
-			dc->SetPixelV(rc.right-1,rc.top+1,RGB(195,184,144));
-		}
-		else
-		{	dc->SetPixelV(rc.right-1,rc.top,RGB(87,100,124));
-			dc->SetPixelV(rc.right-2,rc.top,RGB(168,176,192));
-			dc->SetPixelV(rc.right-1,rc.top+1,RGB(160,169,185));
-		}
+		if(!top || hideSingleTab || anyButtonsVisible || rc.right>ctrl->GetTabRect(selectedTab).right+2)
+			if(top && ctrl->GetTabUnderCursor()==lastTab)   // last tab is highlight.
+			{	if(active)
+				{	dc->SetPixelV(rc.right-1,rc.top,RGB(175,180,180));
+					dc->SetPixelV(rc.right-2,rc.top,RGB(205,194,152));
+					dc->SetPixelV(rc.right-1,rc.top+1,RGB(227,214,171));
+				}
+				else
+				{	dc->SetPixelV(rc.right-1,rc.top,RGB(165,176,191));
+					dc->SetPixelV(rc.right-2,rc.top,RGB(170,179,193));
+					dc->SetPixelV(rc.right-1,rc.top+1,RGB(192,199,212));
+				}
+			}
+			else	// last tab isn't highlight.
+				if(active)
+				{	dc->SetPixelV(rc.right-1,rc.top,RGB(100,106,109));
+					dc->SetPixelV(rc.right-2,rc.top,RGB(205,192,148));
+					dc->SetPixelV(rc.right-1,rc.top+1,RGB(195,184,144));
+				}
+				else
+				{	dc->SetPixelV(rc.right-1,rc.top,RGB(87,100,124));
+					dc->SetPixelV(rc.right-2,rc.top,RGB(168,176,192));
+					dc->SetPixelV(rc.right-1,rc.top+1,RGB(160,169,185));
+				}
 	}
 		// 
 		// draw bottom.
 	rc.SetRect(rect->left,rect->bottom-4,rect->right,rect->bottom);
-	FillSolidRect(dc,&rc,clr);
+	FillSolidRect(dc,&rc,clrBack);
 		// 
 	if(top || scaleMode)
 	{		// left corner.
-		if(top || !selectFirstTab || (ctrl->GetNumberTabs()==1 && ctrl->IsHideSingleTab()))
-			if(!top && ctrl->GetTabUnderCursor()==firstTab)   // tab is highlight.
+		if(top || hideSingleTab || !selectFirstTab)
+			if(!top && ctrl->GetTabUnderCursor()==firstTab)   // first tab is highlight.
 			{	if(active)
 				{	dc->SetPixelV(rc.left,rc.bottom-1,RGB(175,180,180));
 					dc->SetPixelV(rc.left+1,rc.bottom-1,RGB(205,194,152));
@@ -4683,7 +4760,7 @@ void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *d
 					dc->SetPixelV(rc.left,rc.bottom-2,RGB(192,199,212));
 				}
 			}
-			else	// tab isn't highlight.
+			else	// first tab isn't highlight.
 				if(active)
 				{	dc->SetPixelV(rc.left,rc.bottom-1,RGB(86,95,105));
 					dc->SetPixelV(rc.left+1,rc.bottom-1,RGB(198,188,149));
@@ -4695,16 +4772,30 @@ void TabCtrlStyle_VS2010_client::DrawWindowsAreaBack(TabCtrl const *ctrl, CDC *d
 					dc->SetPixelV(rc.left,rc.bottom-2,RGB(160,169,185));
 				}
 			// right corner.
-		if(active)
-		{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(100,106,109));
-			dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(205,192,148));
-			dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(195,184,144));
-		}
-		else
-		{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(87,100,124));
-			dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(168,176,192));
-			dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(160,169,185));
-		}
+		if(top || hideSingleTab || anyButtonsVisible || rc.right>ctrl->GetTabRect(selectedTab).right+2)
+			if(!top && ctrl->GetTabUnderCursor()==lastTab)   // last tab is highlight.
+			{	if(active)
+				{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(175,180,180));
+					dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(205,194,152));
+					dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(227,214,171));
+				}
+				else
+				{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(165,176,191));
+					dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(170,179,193));
+					dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(192,199,212));
+				}
+			}
+			else   // last tab isn't highlight.
+				if(active)
+				{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(100,106,109));
+					dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(205,192,148));
+					dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(195,184,144));
+				}
+				else
+				{	dc->SetPixelV(rc.right-1,rc.bottom-1,RGB(87,100,124));
+					dc->SetPixelV(rc.right-2,rc.bottom-1,RGB(168,176,192));
+					dc->SetPixelV(rc.right-1,rc.bottom-2,RGB(160,169,185));
+				}
 	}
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -4802,7 +4893,7 @@ int TabCtrlStyle_VS2010_bars::GetBorderWidth(TabCtrl const * /*ctrl*/, TabCtrl::
 }
 // 
 CRect TabCtrlStyle_VS2010_bars::GetControlAreaPadding(TabCtrl const * /*ctrl*/, TabCtrl::IRecalc * /*base*/)
-{	return CRect(0,0,3,0);
+{	return CRect(0,0,0,0);
 }
 // 
 CRect TabCtrlStyle_VS2010_bars::GetTabPadding(TabCtrl const *ctrl, TabCtrl::IRecalc * /*base*/)
@@ -5091,6 +5182,16 @@ COLORREF TabCtrlStyle_VS2019_client_light::GetTabSelectedPassiveBackColor(TabCtr
 // 
 COLORREF TabCtrlStyle_VS2019_client_light::GetButtonFrameHighlightBackColor(TabCtrl const * /*ctrl*/)
 {	return RGB(201,222,245);
+}
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// TabCtrlStyle_VS2019_client_light_custom1
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+CRect TabCtrlStyle_VS2019_client_light_custom1::GetControlAreaPadding(TabCtrl const *ctrl, IRecalc * /*base*/)
+{	return (ctrl->GetLayout()==TabCtrl::LayoutTop ? CRect(0,0,0,2) : CRect(0,2,0,0));
 }
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -5438,10 +5539,6 @@ COLORREF TabCtrlStyle_VS2019_bars_dark::GetButtonFrameBackColorB(TabCtrl const *
 //
 int TabCtrlStyle_VS2019_bars_blue::GetBorderWidth(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
 {	return 1;
-}
-//
-CRect TabCtrlStyle_VS2019_bars_blue::GetControlAreaPadding(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)
-{	return CRect(0,0,0,0);
 }
 // 
 CRect TabCtrlStyle_VS2019_bars_blue::GetWindowsAreaPadding(TabCtrl const * /*ctrl*/, IRecalc * /*base*/)

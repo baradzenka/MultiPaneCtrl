@@ -193,11 +193,12 @@ BOOL DemoDlg::OnInitDialog()
 	pCombo->AddString(_T("18. Like client area VS2010"));
 	pCombo->AddString(_T("19. Like bars VS2010"));
 	pCombo->AddString(_T("20. Like client area VS2019 light"));
-	pCombo->AddString(_T("21. Like client area VS2019 dark"));
-	pCombo->AddString(_T("22. Like client area VS2019 blue"));
-	pCombo->AddString(_T("23. Like bars VS2019 light"));
-	pCombo->AddString(_T("24. Like bars VS2019 dark"));
-	pCombo->AddString(_T("25. Like bars VS2019 blue"));
+	pCombo->AddString(_T("21. Kind of 20"));
+	pCombo->AddString(_T("22. Like client area VS2019 dark"));
+	pCombo->AddString(_T("23. Like client area VS2019 blue"));
+	pCombo->AddString(_T("24. Like bars VS2019 light"));
+	pCombo->AddString(_T("25. Like bars VS2019 dark"));
+	pCombo->AddString(_T("26. Like bars VS2019 blue"));
 	pCombo->SetCurSel(0);
 		// 
 	SetButtonCheck(IDC_BUT21,m_MPCC.GetTabsLayout()==TabCtrl::LayoutTop);
@@ -352,22 +353,26 @@ void DemoDlg::OnCbnSelchangeCombo1()
 			m_MPCC.SetDockingMarkers( MarkersLayoutD(), 50);
 			break;
 		case 20: 
+			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_client_light_custom1);
+			m_MPCC.SetDockingMarkers( MarkersLayoutD(), 50);
+			break;
+		case 21: 
 			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_client_dark);
 			m_MPCC.SetDockingMarkers( MarkersLayoutE(), 50);
 			break;
-		case 21: 
+		case 22: 
 			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_client_blue);
 			m_MPCC.SetDockingMarkers( MarkersLayoutC(), 50);
 			break;
-		case 22: 
+		case 23: 
 			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_bars_light);
 			m_MPCC.SetDockingMarkers( MarkersLayoutD(), 50);
 			break;
-		case 23: 
+		case 24: 
 			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_bars_dark);
 			m_MPCC.SetDockingMarkers( MarkersLayoutE(), 50);
 			break;
-		case 24: 
+		case 25: 
 			m_MPCC.InstallStyle(&m_MPCC.styleVS2019_bars_blue);
 			m_MPCC.SetDockingMarkers( MarkersLayoutC(), 50);
 			break;
