@@ -7,6 +7,7 @@
 #include "DockingMarkers.h"
 #include <cassert>
 #include <list>
+#include <algorithm>
 // 
 #pragma warning(push)
 #pragma warning(disable : 4458)   // declaration of 'nativeCap' hides class member.
