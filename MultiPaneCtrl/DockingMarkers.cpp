@@ -859,30 +859,31 @@ bool DockingMarkers::Private::LoadImage(HMODULE moduleRes/*or null*/, UINT resID
 	{	if(!pngImage)   // bmp.
 			*bmp = ::new (std::nothrow) Gdiplus::Bitmap(moduleRes,MAKEINTRESOURCEW(resID));
 		else   // png.
-		{	HRSRC hRsrc = ::FindResource(moduleRes,MAKEINTRESOURCE(resID),_T("PNG"));
-			if(hRsrc)
-			{	HGLOBAL hGlobal = ::LoadResource(moduleRes,hRsrc);
-				if(hGlobal)
-				{	const void *lpBuffer = ::LockResource(hGlobal);
-					if(lpBuffer)
-					{	const UINT uiSize = static_cast<UINT>( ::SizeofResource(moduleRes,hRsrc) );
-						HGLOBAL hRes = ::GlobalAlloc(GMEM_MOVEABLE, uiSize);
-						if(hRes)
-						{	void *lpResBuffer = ::GlobalLock(hRes);
-							if(lpResBuffer)
-							{	memcpy(lpResBuffer, lpBuffer, uiSize);
-								IStream *pStream = nullptr;
-								if(::CreateStreamOnHGlobal(hRes, FALSE, &pStream/*out*/)==S_OK)
-								{	*bmp = ::new (std::nothrow) Gdiplus::Bitmap(pStream,FALSE);
-									pStream->Release();
+		{	HRSRC rsrc = ::FindResource(moduleRes,MAKEINTRESOURCE(resID),_T("PNG"));
+			if(rsrc)
+			{	HGLOBAL rsrcMem = ::LoadResource(moduleRes,rsrc);
+				if(rsrcMem)
+				{	const void *rsrcBuffer = ::LockResource(rsrcMem);
+					if(rsrcBuffer)
+					{	const UINT rsrcSize = static_cast<UINT>( ::SizeofResource(moduleRes,rsrc) );
+						HGLOBAL streamMem = ::GlobalAlloc(GMEM_MOVEABLE,rsrcSize);
+						if(streamMem)
+						{	void *streamBuffer = ::GlobalLock(streamMem);
+							if(streamBuffer)
+							{	memcpy(streamBuffer,rsrcBuffer,rsrcSize);
+								::GlobalUnlock(streamBuffer);
+									// 
+								IStream *stream = nullptr;
+								if(::CreateStreamOnHGlobal(streamMem,FALSE,&stream/*out*/)==S_OK)
+								{	*bmp = ::new (std::nothrow) Gdiplus::Bitmap(stream,FALSE);
+									stream->Release();
 								}
-								::GlobalUnlock(lpResBuffer);
 							}
-							::GlobalFree(hRes);
+							::GlobalFree(streamMem);
 						}
-						::UnlockResource(hGlobal);
+						::UnlockResource(rsrcMem);
 					}
-					::FreeResource(hGlobal);
+					::FreeResource(rsrcMem);
 				}
 			}
 		}
